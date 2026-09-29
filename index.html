@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WoLiegt?</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+      --danger: #ef4444;
+      --green: #22c55e;
+      --r: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 14px 20px 12px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(59,130,246,.35);
+    }
+    header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -.4px; }
+    header p  { font-size: .78rem; opacity: .78; margin-top: 1px; }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      padding: 16px 16px 90px;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ── Bottom nav ── */
+    nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 20;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    nav button {
+      flex: 1;
+      padding: 10px 4px 12px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: .68rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color .15s;
+    }
+    nav button.active { color: var(--primary); }
+    nav button svg { width: 22px; height: 22px; }
+
+    /* ── Tabs ── */
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block;
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .input-wrap { position: relative; }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: .97rem;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      transition: border-color .15s;
+      -webkit-appearance: none;
+    }
+    input[type="text"]:focus { border-color: var(--primary); }
+    input[type="text"].ac-open { border-radius: 8px 8px 0 0; border-color: var(--primary); }
+
+    .btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: .97rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn:active { transform: scale(.98); }
+
+    /* ── Autocomplete ── */
+    .ac-list {
+      display: none;
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: var(--surface);
+      border: 1.5px solid var(--primary);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 190px;
+      overflow-y: auto;
+      z-index: 50;
+      box-shadow: 0 4px 8px rgba(0,0,0,.1);
+    }
+    .ac-list.open { display: block; }
+    .ac-item {
+      padding: 10px 12px;
+      cursor: pointer;
+      font-size: .9rem;
+    }
+    .ac-item:hover, .ac-item.hi { background: #eff6ff; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      top: 68px; left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      background: var(--green);
+      color: #fff;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: .88rem;
+      opacity: 0;
+      transition: opacity .25s, transform .25s;
+      z-index: 100;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Stats ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat {
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 12px 8px;
+      text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .stat-val { font-size: 1.6rem; font-weight: 700; color: var(--primary); line-height: 1; }
+    .stat-lbl { font-size: .68rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── Search ── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .search-wrap input { padding-left: 38px; }
+    .search-ico {
+      position: absolute;
+      left: 11px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    /* ── Filter chips ── */
+    .chips {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      padding: 4px 11px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      font-size: .78rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      color: var(--muted);
+      transition: all .15s;
+      user-select: none;
+    }
+    .chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* ── Item cards ── */
+    .items { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+    .item-card {
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .item-body { flex: 1; min-width: 0; }
+    .item-name {
+      font-weight: 600;
+      font-size: .97rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 5px;
+    }
+    .badges { display: flex; flex-wrap: wrap; gap: 5px; }
+    .badge {
+      font-size: .72rem;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .loc { background: #eff6ff; color: #2563eb; }
+    .cat { background: #f0fdf4; color: #16a34a; }
+    .del-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color .15s, background .15s;
+      flex-shrink: 0;
+      line-height: 0;
+    }
+    .del-btn:hover { color: var(--danger); background: #fef2f2; }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+    }
+    .empty svg { width: 48px; height: 48px; opacity: .25; margin-bottom: 12px; }
+    .empty p { font-size: .9rem; }
+
+    @media (min-width: 480px) {
+      main { padding: 20px 20px 90px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>WoLiegt?</h1>
+  <p>Dein persönliches Haushalts-Inventar</p>
+</header>
+
+<main>
+  <!-- ADD TAB -->
+  <div class="tab active" id="tab-add">
+    <div class="card">
+      <div class="card-title">Neues Objekt eintragen</div>
+
+      <div class="form-group">
+        <label for="iName">Name</label>
+        <input id="iName" type="text" placeholder="z. B. Winterjacke, Bohrmaschine …" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="iLoc">Ort</label>
+        <div class="input-wrap">
+          <input id="iLoc" type="text" placeholder="z. B. Keller, Dachboden …" autocomplete="off">
+          <div class="ac-list" id="acLoc"></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="iCat">Kategorie</label>
+        <div class="input-wrap">
+          <input id="iCat" type="text" placeholder="z. B. Werkzeug, Kleidung …" autocomplete="off">
+          <div class="ac-list" id="acCat"></div>
+        </div>
+      </div>
+
+      <button class="btn" id="addBtn">Eintragen</button>
+    </div>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div class="tab" id="tab-overview">
+    <div class="stats" id="stats"></div>
+
+    <div class="search-wrap">
+      <svg class="search-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input type="text" id="searchQ" placeholder="Suchen …" autocomplete="off">
+    </div>
+
+    <div class="chips" id="locChips"></div>
+    <div class="chips" id="catChips"></div>
+
+    <div class="items" id="itemList"></div>
+  </div>
+</main>
+
+<nav>
+  <button class="active" id="nav-add" data-tab="add">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>
+    </svg>
+    Eintragen
+  </button>
+  <button id="nav-overview" data-tab="overview">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/>
+    </svg>
+    Übersicht
+  </button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// ── Storage ──────────────────────────────────────────────
+const STORE_KEY = 'woliegtdata_v1';
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)); } catch { return null; }
+}
+
+let db = load() || {
+  items: [],
+  locations: ['Keller','Dachboden','Erdgeschoss','Wohnzimmer','Küche','Schlafzimmer','Kinderzimmer','Bad','Garage','Flur','Büro'],
+  categories: ['Werkzeug','Kleidung','Bücher','Elektronik','Dokumente','Sport','Dekoration','Haushalt','Spielzeug','Lebensmittel']
+};
+
+function persist() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(db));
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── Navigation ────────────────────────────────────────────
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+    if (tab === 'overview') render();
+  });
+});
+
+// ── Autocomplete ──────────────────────────────────────────
+function setupAC(inputId, listId, source) {
+  const inp = document.getElementById(inputId);
+  const box = document.getElementById(listId);
+  let hi = -1;
+
+  function open(opts) {
+    if (!opts.length) { close(); return; }
+    hi = -1;
+    box.innerHTML = opts.map(o => `<div class="ac-item" data-val="${esc(o)}">${esc(o)}</div>`).join('');
+    box.classList.add('open');
+    inp.classList.add('ac-open');
+    box.querySelectorAll('.ac-item').forEach(item => {
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        inp.value = item.dataset.val;
+        close();
+      });
+    });
+  }
+
+  function close() {
+    box.classList.remove('open');
+    inp.classList.remove('ac-open');
+    hi = -1;
+  }
+
+  function suggest() {
+    const q = inp.value.toLowerCase();
+    open(source().filter(o => o.toLowerCase().includes(q)));
+  }
+
+  inp.addEventListener('focus', suggest);
+  inp.addEventListener('input', suggest);
+
+  inp.addEventListener('keydown', e => {
+    const items = box.querySelectorAll('.ac-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      hi = Math.min(hi + 1, items.length - 1);
+      items.forEach((el, i) => el.classList.toggle('hi', i === hi));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      hi = Math.max(hi - 1, -1);
+      items.forEach((el, i) => el.classList.toggle('hi', i === hi));
+    } else if (e.key === 'Enter' && hi >= 0) {
+      e.preventDefault();
+      inp.value = items[hi].dataset.val;
+      close();
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!inp.contains(e.target) && !box.contains(e.target)) close();
+  });
+}
+
+setupAC('iLoc', 'acLoc', () => db.locations);
+setupAC('iCat', 'acCat', () => db.categories);
+
+// ── Add item ──────────────────────────────────────────────
+document.getElementById('addBtn').addEventListener('click', () => {
+  const name = document.getElementById('iName').value.trim();
+  const loc  = document.getElementById('iLoc').value.trim();
+  const cat  = document.getElementById('iCat').value.trim();
+
+  if (!name) { document.getElementById('iName').focus(); return; }
+  if (!loc)  { document.getElementById('iLoc').focus();  return; }
+
+  db.items.unshift({ id: uid(), name, location: loc, category: cat, ts: Date.now() });
+
+  if (!db.locations.includes(loc)) db.locations.push(loc);
+  if (cat && !db.categories.includes(cat)) db.categories.push(cat);
+
+  persist();
+
+  document.getElementById('iName').value = '';
+  document.getElementById('iLoc').value  = '';
+  document.getElementById('iCat').value  = '';
+  document.getElementById('iName').focus();
+
+  toast('✓ ' + name + ' eingetragen');
+});
+
+document.getElementById('iName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('iLoc').focus();
+});
+
+// ── Overview ──────────────────────────────────────────────
+let filterLoc = null;
+let filterCat = null;
+
+document.getElementById('searchQ').addEventListener('input', render);
+
+function setLocFilter(val) { filterLoc = val; render(); }
+function setCatFilter(val) { filterCat = val; render(); }
+
+function render() {
+  const q = document.getElementById('searchQ').value.toLowerCase().trim();
+
+  // Stats
+  const usedLocs = [...new Set(db.items.map(i => i.location))];
+  const usedCats = [...new Set(db.items.map(i => i.category).filter(Boolean))];
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${db.items.length}</div><div class="stat-lbl">Objekte</div></div>
+    <div class="stat"><div class="stat-val">${usedLocs.length}</div><div class="stat-lbl">Orte</div></div>
+    <div class="stat"><div class="stat-val">${usedCats.length}</div><div class="stat-lbl">Kategorien</div></div>
+  `;
+
+  // Location chips
+  const locBox = document.getElementById('locChips');
+  locBox.innerHTML = '';
+  if (usedLocs.length) {
+    const all = document.createElement('div');
+    all.className = 'chip' + (!filterLoc ? ' active' : '');
+    all.textContent = 'Alle Orte';
+    all.addEventListener('click', () => setLocFilter(null));
+    locBox.appendChild(all);
+    usedLocs.forEach(loc => {
+      const c = document.createElement('div');
+      c.className = 'chip' + (filterLoc === loc ? ' active' : '');
+      c.textContent = loc;
+      c.addEventListener('click', () => setLocFilter(loc));
+      locBox.appendChild(c);
+    });
+  }
+
+  // Category chips
+  const catBox = document.getElementById('catChips');
+  catBox.innerHTML = '';
+  if (usedCats.length) {
+    const all = document.createElement('div');
+    all.className = 'chip' + (!filterCat ? ' active' : '');
+    all.textContent = 'Alle Kategorien';
+    all.addEventListener('click', () => setCatFilter(null));
+    catBox.appendChild(all);
+    usedCats.forEach(cat => {
+      const c = document.createElement('div');
+      c.className = 'chip' + (filterCat === cat ? ' active' : '');
+      c.textContent = cat;
+      c.addEventListener('click', () => setCatFilter(cat));
+      catBox.appendChild(c);
+    });
+  }
+
+  // Filter items
+  const visible = db.items.filter(item => {
+    if (filterLoc && item.location !== filterLoc) return false;
+    if (filterCat && item.category !== filterCat) return false;
+    if (q && !item.name.toLowerCase().includes(q) &&
+             !item.location.toLowerCase().includes(q) &&
+             !(item.category || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const list = document.getElementById('itemList');
+
+  if (!visible.length) {
+    list.innerHTML = `
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M5 8h14M5 8a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M5 8v11a2 2 0 002 2h10a2 2 0 002-2V8"/>
+        </svg>
+        <p>${db.items.length === 0 ? 'Noch nichts eingetragen.' : 'Keine Treffer gefunden.'}</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  visible.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.innerHTML = `
+      <div class="item-body">
+        <div class="item-name">${esc(item.name)}</div>
+        <div class="badges">
+          <span class="badge loc">📍 ${esc(item.location)}</span>
+          ${item.category ? `<span class="badge cat">${esc(item.category)}</span>` : ''}
+        </div>
+      </div>
+      <button class="del-btn" title="Löschen" aria-label="Löschen">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+        </svg>
+      </button>`;
+    card.querySelector('.del-btn').addEventListener('click', () => {
+      if (confirm(`„${item.name}" löschen?`)) {
+        db.items = db.items.filter(i => i.id !== item.id);
+        persist();
+        render();
+      }
+    });
+    list.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>

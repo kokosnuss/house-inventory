@@ -1,0 +1,12 @@
+{
+  "name": "woliegtapp",
+  "version": "1.0.0",
+  "description": "Haushalts-Inventar Netzwerk-App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0"
+  }
+}
